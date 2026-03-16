@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,7 +30,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'config',
+    "rest_framework",
+    "apps.products",
+    "apps.orders",
 ]
 
 MIDDLEWARE = [
@@ -42,7 +45,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'sweedmood.urls'
+ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
     {
@@ -113,7 +116,7 @@ STATIC_URL = 'static/'
 
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Shukir.kz",
+    "site_title": "SweetMood.kz",
     "site_header": "SHUKIR ҚАЙЫРЫМДЫЛЫҚ ҚОРЫ",
     "site_brand": "SHUKIR",
     "site_logo": "img/logo.png",
