@@ -1,4 +1,4 @@
-import requests
+import aiohttp
 import os
 from dotenv import load_dotenv
 
@@ -7,27 +7,65 @@ load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
+BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
-def send_order_to_telegram(order):
+
+def build_products(order):
+    products_text = ""
+
+    for item in order.items.all():
+        products_text += f"• {item.product.product_name} × {item.quantity}\n"
+
+    return products_text
+
+
+def build_message(order):
+    products = build_products(order)
 
     message = f"""
-🛒 Новый заказ
+<b>🛒 NEW ORDER #{order.id}</b>
 
-Имя: {order.name}
-Фамилия: {order.surname}
-Телефон: {order.phone_number}
-"Локация": {order.location}
-Тип заказа: {order.order_type}
+<b>👤 Customer</b>
+{order.name} {order.surname}
 
-Сумма: {order.total_price}
+<b>📞 Phone</b>
+{order.phone_number}
+
+<b>🚚 Order type</b>
+{order.order_type}
+
+<b>📦 Products</b>
+{products}
+
+<b>💰 Total price</b>
+{order.total_price} ₸
+
+<b>💳 Payment check attached below</b>
 """
 
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    return message
 
-    requests.post(
-        url,
-        data={
-            "chat_id": CHAT_ID,
-            "text": message
-        }
-    )
+
+async def send_order_to_telegram(order):
+    message = build_message(order)
+
+    url = f"{BASE_URL}/sendDocument"
+
+    file_path = order.payment_check_file.path
+
+    async with aiohttp.ClientSession() as session:
+
+        with open(file_path, "rb") as f:
+
+            data = aiohttp.FormData()
+            data.add_field("chat_id", CHAT_ID)
+            data.add_field("caption", message)
+            data.add_field("parse_mode", "HTML")
+            data.add_field(
+                "document",
+                f,
+                filename="payment_check.jpg",
+                content_type="application/octet-stream"
+            )
+
+            await session.post(url, data=data)
