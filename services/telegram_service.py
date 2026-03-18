@@ -1,4 +1,4 @@
-import aiohttp
+import requests
 import os
 from dotenv import load_dotenv
 
@@ -11,61 +11,74 @@ BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
 
 
 def build_products(order):
-    products_text = ""
+    text = ""
 
     for item in order.items.all():
-        products_text += f"• {item.product.product_name} × {item.quantity}\n"
+        name = (
+            item.product.product_name_uz
+            or item.product.product_name_kz
+            or item.product.product_name_ru
+        )
+        text += f"🍫 <b>{name}</b> × {item.quantity}\n"
 
-    return products_text
+    return text
 
 
 def build_message(order):
+
     products = build_products(order)
+
+    phone_clean = order.phone_number.replace("+", "")
+
+    whatsapp_link = f"https://wa.me/{phone_clean}"
 
     message = f"""
 <b>🛒 NEW ORDER #{order.id}</b>
+
+━━━━━━━━━━━━━━
 
 <b>👤 Customer</b>
 {order.name} {order.surname}
 
 <b>📞 Phone</b>
-{order.phone_number}
+<a href="{whatsapp_link}">{order.phone_number}</a>
 
 <b>🚚 Order type</b>
 {order.order_type}
 
+━━━━━━━━━━━━━━
+
 <b>📦 Products</b>
+
 {products}
 
-<b>💰 Total price</b>
-{order.total_price} ₸
+━━━━━━━━━━━━━━
 
-<b>💳 Payment check attached below</b>
+<b>💰 Total</b>
+<b>{order.total_price} ₸</b>
 """
 
     return message
 
 
-async def send_order_to_telegram(order):
+def send_order_to_telegram(order):
+
     message = build_message(order)
 
     url = f"{BASE_URL}/sendDocument"
 
     file_path = order.payment_check_file.path
 
-    async with aiohttp.ClientSession() as session:
+    with open(file_path, "rb") as f:
 
-        with open(file_path, "rb") as f:
+        files = {
+            "document": f
+        }
 
-            data = aiohttp.FormData()
-            data.add_field("chat_id", CHAT_ID)
-            data.add_field("caption", message)
-            data.add_field("parse_mode", "HTML")
-            data.add_field(
-                "document",
-                f,
-                filename="payment_check.jpg",
-                content_type="application/octet-stream"
-            )
+        data = {
+            "chat_id": CHAT_ID,
+            "caption": message,
+            "parse_mode": "HTML"
+        }
 
-            await session.post(url, data=data)
+        requests.post(url, data=data, files=files)
