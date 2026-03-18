@@ -15,9 +15,9 @@ def build_products(order):
 
     for item in order.items.all():
         name = (
-            item.product.product_name_uz
+            item.product.product_name_ru
+            or item.product.product_name_uz
             or item.product.product_name_kz
-            or item.product.product_name_ru
         )
         text += f"🍫 <b>{name}</b> × {item.quantity}\n"
 
@@ -29,32 +29,31 @@ def build_message(order):
     products = build_products(order)
 
     phone_clean = order.phone_number.replace("+", "")
-
     whatsapp_link = f"https://wa.me/{phone_clean}"
 
     message = f"""
-<b>🛒 NEW ORDER #{order.id}</b>
+<b>🛒 НОВЫЙ ЗАКАЗ #{order.id}</b>
 
 ━━━━━━━━━━━━━━
 
-<b>👤 Customer</b>
+<b>👤 Клиент</b>
 {order.name} {order.surname}
 
-<b>📞 Phone</b>
+<b>📞 Телефон</b>
 <a href="{whatsapp_link}">{order.phone_number}</a>
 
-<b>🚚 Order type</b>
+<b>🚚 Тип заказа</b>
 {order.order_type}
 
 ━━━━━━━━━━━━━━
 
-<b>📦 Products</b>
+<b>📦 Товары</b>
 
 {products}
 
 ━━━━━━━━━━━━━━
 
-<b>💰 Total</b>
+<b>💰 Итоговая сумма</b>
 <b>{order.total_price} ₸</b>
 """
 
